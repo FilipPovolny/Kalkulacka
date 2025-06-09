@@ -31,30 +31,49 @@ function calculate() {
   }
 }
 
-// Tlačítka
+// Funkce pro zpracování vstupu
+function handleInput(value) {
+  if (value === "=") {
+    calculate();
+  } else if (value === "C") {
+    input = input.slice(0, -1);
+    updateInputDisplay();
+  } else if (value === "CE") {
+    input = "";
+    updateInputDisplay();
+    updateOutput("0");
+  } else {
+    input += value;
+    updateInputDisplay();
+  }
+}
+
+// Kliknutí na tlačítka
 document.querySelectorAll(".calculator-buttons button").forEach((button) => {
   const value = button.getAttribute("value");
-
   if (!value) return;
 
   button.addEventListener("click", () => {
-    if (value === "=") {
-      calculate();
-    } else if (value === "C") {
-      // Odstraň poslední znak
-      input = input.slice(0, -1);
-      updateInputDisplay();
-    } else if (value === "CE") {
-      // Vymaž vše
-      input = "";
-      updateInputDisplay();
-      updateOutput("0");
-    } else {
-      // Přidej znak
-      input += value;
-      updateInputDisplay();
-    }
+    handleInput(value);
   });
+});
+
+// Klávesnice (včetně Backspace jako "C")
+document.addEventListener("keydown", (event) => {
+  let key = event.key;
+
+  if (key === "Enter") key = "=";
+  if (key === "Backspace") {
+    handleInput("C");
+    event.preventDefault(); // Zabrání prohlížeči smazat znak ve stránce
+    return;
+  }
+
+  const allowedKeys = ["^", "(", ")", "/", "*", "-", "+", ".", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "="];
+
+  if (allowedKeys.includes(key)) {
+    handleInput(key);
+  }
 });
 
 // Vymazání historie
