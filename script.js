@@ -4,30 +4,32 @@ const historyDisplay = document.getElementById("history-display");
 
 let input = "";
 
-// Načti historii z localStorage
-function loadHistory() {
-  const savedHistory = JSON.parse(localStorage.getItem("history")) || [];
-  savedHistory.forEach(item => {
-    const historyItem = document.createElement("p");
-    historyItem.textContent = item;
-    historyDisplay.appendChild(historyItem);
-  });
-}
-
-// Ulož aktuální historii do localStorage
-function saveHistory() {
-  const historyItems = Array.from(historyDisplay.querySelectorAll("p")).map(p => p.textContent);
-  localStorage.setItem("history", JSON.stringify(historyItems));
-}
-
-// Aktualizace vstupního displaye
+// Zobrazení vstupu
 function updateInputDisplay() {
   inputDisplay.textContent = input || "0";
 }
 
-// Aktualizace výstupního displaye
+// Zobrazení výsledku
 function updateOutput(value) {
   outputDisplay.textContent = value;
+}
+
+// Uložení do localStorage
+function saveHistoryItem(expression, result) {
+  const history = JSON.parse(localStorage.getItem("calcHistory")) || [];
+  history.unshift(`${expression} = ${result}`);
+  localStorage.setItem("calcHistory", JSON.stringify(history));
+}
+
+// Načtení historie z localStorage
+function loadHistory() {
+  const history = JSON.parse(localStorage.getItem("calcHistory")) || [];
+  historyDisplay.innerHTML = "";
+  history.forEach((item) => {
+    const historyItem = document.createElement("p");
+    historyItem.textContent = item;
+    historyDisplay.appendChild(historyItem);
+  });
 }
 
 // Výpočet
@@ -37,12 +39,12 @@ function calculate() {
     const result = eval(sanitizedInput);
     updateOutput(result);
 
-    const historyItemText = `${input} = ${result}`;
+    saveHistoryItem(input, result);
+
     const historyItem = document.createElement("p");
-    historyItem.textContent = historyItemText;
+    historyItem.textContent = `${input} = ${result}`;
     historyDisplay.prepend(historyItem);
 
-    saveHistory(); // Ulož novou historii
     input = result.toString();
   } catch (e) {
     updateOutput("Error");
@@ -52,7 +54,6 @@ function calculate() {
 // Tlačítka
 document.querySelectorAll(".calculator-buttons button").forEach((button) => {
   const value = button.getAttribute("value");
-
   if (!value) return;
 
   button.addEventListener("click", () => {
@@ -72,11 +73,28 @@ document.querySelectorAll(".calculator-buttons button").forEach((button) => {
   });
 });
 
+// Klávesnice
+document.addEventListener("keydown", (e) => {
+  const key = e.key;
+
+  if (!isNaN(key) || "+-*/().^".includes(key)) {
+    input += key;
+    updateInputDisplay();
+  } else if (key === "Enter") {
+    e.preventDefault();
+    calculate();
+  } else if (key === "Backspace" || key.toLowerCase() === "c") {
+    input = input.slice(0, -1);
+    updateInputDisplay();
+  }
+});
+
 // Vymazání historie
 document.getElementById("clear-history-btn").addEventListener("click", () => {
   historyDisplay.innerHTML = "";
-  localStorage.removeItem("history");
+  localStorage.removeItem("calcHistory");
 });
 
-// Načti historii po načtení stránky
-window.addEventListener("load", loadHistory);
+// Při načtení stránky
+loadHistory();
+updateInputDisplay();
