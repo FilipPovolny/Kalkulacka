@@ -4,6 +4,22 @@ const historyDisplay = document.getElementById("history-display");
 
 let input = "";
 
+// Načti historii z localStorage
+function loadHistory() {
+  const savedHistory = JSON.parse(localStorage.getItem("history")) || [];
+  savedHistory.forEach(item => {
+    const historyItem = document.createElement("p");
+    historyItem.textContent = item;
+    historyDisplay.appendChild(historyItem);
+  });
+}
+
+// Ulož aktuální historii do localStorage
+function saveHistory() {
+  const historyItems = Array.from(historyDisplay.querySelectorAll("p")).map(p => p.textContent);
+  localStorage.setItem("history", JSON.stringify(historyItems));
+}
+
 // Aktualizace vstupního displaye
 function updateInputDisplay() {
   inputDisplay.textContent = input || "0";
@@ -21,62 +37,46 @@ function calculate() {
     const result = eval(sanitizedInput);
     updateOutput(result);
 
+    const historyItemText = `${input} = ${result}`;
     const historyItem = document.createElement("p");
-    historyItem.textContent = `${input} = ${result}`;
+    historyItem.textContent = historyItemText;
     historyDisplay.prepend(historyItem);
 
+    saveHistory(); // Ulož novou historii
     input = result.toString();
   } catch (e) {
     updateOutput("Error");
   }
 }
 
-// Funkce pro zpracování vstupu
-function handleInput(value) {
-  if (value === "=") {
-    calculate();
-  } else if (value === "C") {
-    input = input.slice(0, -1);
-    updateInputDisplay();
-  } else if (value === "CE") {
-    input = "";
-    updateInputDisplay();
-    updateOutput("0");
-  } else {
-    input += value;
-    updateInputDisplay();
-  }
-}
-
-// Kliknutí na tlačítka
+// Tlačítka
 document.querySelectorAll(".calculator-buttons button").forEach((button) => {
   const value = button.getAttribute("value");
+
   if (!value) return;
 
   button.addEventListener("click", () => {
-    handleInput(value);
+    if (value === "=") {
+      calculate();
+    } else if (value === "C") {
+      input = input.slice(0, -1);
+      updateInputDisplay();
+    } else if (value === "CE") {
+      input = "";
+      updateInputDisplay();
+      updateOutput("0");
+    } else {
+      input += value;
+      updateInputDisplay();
+    }
   });
-});
-
-// Klávesnice (včetně Backspace jako "C")
-document.addEventListener("keydown", (event) => {
-  let key = event.key;
-
-  if (key === "Enter") key = "=";
-  if (key === "Backspace") {
-    handleInput("C");
-    event.preventDefault(); // Zabrání prohlížeči smazat znak ve stránce
-    return;
-  }
-
-  const allowedKeys = ["^", "(", ")", "/", "*", "-", "+", ".", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "="];
-
-  if (allowedKeys.includes(key)) {
-    handleInput(key);
-  }
 });
 
 // Vymazání historie
 document.getElementById("clear-history-btn").addEventListener("click", () => {
   historyDisplay.innerHTML = "";
+  localStorage.removeItem("history");
 });
+
+// Načti historii po načtení stránky
+window.addEventListener("load", loadHistory);
